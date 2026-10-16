@@ -201,11 +201,13 @@ public partial class MainWindow : Window
 
     // Controller navigation state.
     private readonly DispatcherTimer _gamepadTimer;
+    private const int MaxDecodedBackgrounds = 3;
+    private readonly List<GameEntry> _decodedBackgrounds = [];
     private HostGamepadButtons _previousPadButtons;
-    private long _navLeftNextAt;
-    private long _navRightNextAt;
-    private long _navUpNextAt;
-    private long _navDownNextAt;
+    private NavigationRepeat _navLeftNextAt;
+    private NavigationRepeat _navRightNextAt;
+    private NavigationRepeat _navUpNextAt;
+    private NavigationRepeat _navDownNextAt;
 
     //Github http client for latest commit
     private static readonly HttpClient GithubHttpClient = CreateGithubHttpClient();
@@ -446,9 +448,10 @@ public partial class MainWindow : Window
                 EnvDisableVkImplicitLayersToggle.IsChecked == true);
 
         SdlLauncherGamepad.EnsureStarted();
+        InitializeController();
         _gamepadTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(50),
+            Interval = TimeSpan.FromMilliseconds(16),
         };
         _gamepadTimer.Tick += (_, _) => PollGamepad();
         _gamepadTimer.Start();
@@ -694,6 +697,11 @@ public partial class MainWindow : Window
             SetActiveClass(buttons[index], active);
             SetOptionsPanelInteraction(panels[index], active);
         }
+
+        if (panels[section] == OptionsEnvironmentPanel)
+        {
+            RefreshTrophyTestGames();
+        }
     }
 
     private static void SetOptionsPanelInteraction(Control panel, bool active)
@@ -897,16 +905,17 @@ public partial class MainWindow : Window
         var shown = Array.IndexOf(shownOrder, _activePageIndex);
         if ((shoulderPressed & HostGamepadButtons.L1) != 0)
         {
-            SetActivePage(shownOrder[Math.Max(0, shown - 1)]);
+            ShowPageFromController(shownOrder[Math.Max(0, shown - 1)]);
         }
 
         if ((shoulderPressed & HostGamepadButtons.R1) != 0)
         {
-            SetActivePage(shownOrder[Math.Min(shownOrder.Length - 1, shown + 1)]);
+            ShowPageFromController(shownOrder[Math.Min(shownOrder.Length - 1, shown + 1)]);
         }
 
         if (_activePageIndex != 0 || _isGameSettingsOpen)
         {
+            PollControllerPage(pad, pad.Buttons & ~_previousPadButtons);
             _previousPadButtons = pad.Buttons;
             return;
         }
@@ -977,30 +986,33 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Edge-triggered with hold-to-repeat: fires on press, then repeats
-    /// after 400ms at 130ms intervals while held.
+    /// after 300ms, speeding up from 60ms to one step per frame while held.
     /// </summary>
-    private static bool ShouldNavigate(bool held, ref long nextAt, long now)
+    private static bool ShouldNavigate(bool held, ref NavigationRepeat repeat, long now)
     {
         if (!held)
         {
-            nextAt = 0;
+            repeat = default;
             return false;
         }
 
-        if (nextAt == 0)
+        if (repeat.NextAt == 0)
         {
-            nextAt = now + 400;
+            repeat = new NavigationRepeat(now + 300, now);
             return true;
         }
 
-        if (now >= nextAt)
+        if (now >= repeat.NextAt)
         {
-            nextAt = now + 130;
+            var interval = Math.Max(16, 60 - (now - repeat.HeldSince - 300) / 15);
+            repeat = repeat with { NextAt = now + interval };
             return true;
         }
 
         return false;
     }
+
+    private record struct NavigationRepeat(long NextAt, long HeldSince);
 
     private int LibraryRowStep()
     {
@@ -2295,8 +2307,8 @@ public partial class MainWindow : Window
             }
 
             // A held direction must not reopen the picker after it closes.
-            _navLeftNextAt = long.MaxValue;
-            _navRightNextAt = long.MaxValue;
+            _navLeftNextAt = new NavigationRepeat(long.MaxValue, 0);
+            _navRightNextAt = new NavigationRepeat(long.MaxValue, 0);
             StartAddFolderFromTile();
             return;
         }

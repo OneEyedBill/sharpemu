@@ -169,7 +169,7 @@ internal sealed class TrophyPage : UserControl
             ShowCollection();
             e.Handled = true;
         }
-        else if (!_inGame && _hub.HandleKey(e.Key))
+        else if (_inGame ? _game.HandleKey(e.Key) : _hub.HandleKey(e.Key))
         {
             e.Handled = true;
         }

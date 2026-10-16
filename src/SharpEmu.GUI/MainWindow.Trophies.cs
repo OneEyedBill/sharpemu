@@ -24,7 +24,6 @@ public partial class MainWindow
             _settings.TrophySound = TrophySoundToggle.IsChecked == true;
             TrophySound.Enabled = _settings.TrophySound;
         };
-        OptionsEnvironmentNav.Click += (_, _) => RefreshTrophyTestGames();
     }
 
     private IReadOnlyList<GameEntry> GamesWithTrophies() =>

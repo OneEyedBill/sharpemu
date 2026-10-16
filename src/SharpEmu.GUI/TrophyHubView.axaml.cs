@@ -134,6 +134,11 @@ public partial class TrophyHubView : UserControl
             case Key.Enter when _selected >= 0 && _selected < _cards.Count:
                 Open(_cards[_selected].Summary);
                 return true;
+            case Key.Left or Key.Right:
+                _sort = (Sort)(((int)_sort + (key == Key.Right ? 1 : 2)) % 3);
+                UpdateSortChips();
+                RenderCards(stagger: true);
+                return true;
             default:
                 return false;
         }
