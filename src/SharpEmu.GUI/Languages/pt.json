@@ -40,6 +40,7 @@
   "Library.Empty.AddFolder": "＋ Adicionar pasta de jogos",
 
   "Library.Loading": "A carregar biblioteca…",
+  "Library.ScanningFolder": "A analisar a pasta…",
   "Library.Stat.Version": "Versão",
   "Library.Stat.Installed": "Instalado",
   "Library.Stat.TitleId": "ID do título",

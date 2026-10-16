@@ -40,6 +40,7 @@
   "Library.Empty.AddFolder": "＋ Tilføj spilmappe",
 
   "Library.Loading": "Indlæser bibliotek…",
+  "Library.ScanningFolder": "Scanner mappen…",
   "Library.Stat.Version": "Version",
   "Library.Stat.Installed": "Installeret",
   "Library.Stat.TitleId": "Titel-id",

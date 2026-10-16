@@ -203,6 +203,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _gamepadTimer;
     private const int MaxDecodedBackgrounds = 3;
     private readonly List<GameEntry> _decodedBackgrounds = [];
+    private int _folderScansInFlight;
     private HostGamepadButtons _previousPadButtons;
     private NavigationRepeat _navLeftNextAt;
     private NavigationRepeat _navRightNextAt;
@@ -1837,7 +1838,7 @@ public partial class MainWindow : Window
             _settings.Save();
         }
 
-        await RescanLibraryAsync();
+        await RescanLibraryAsync(addingFolder: true);
     }
 
     private void OnLibraryRefreshRequested(object? sender, EventArgs args)
@@ -1891,7 +1892,7 @@ public partial class MainWindow : Window
         LoadGameDetailsInBackground(cached, cached);
     }
 
-    private async Task RescanLibraryAsync(bool showProgress = true)
+    private async Task RescanLibraryAsync(bool showProgress = true, bool addingFolder = false)
     {
         Dispatcher.UIThread.VerifyAccess();
 
@@ -1905,8 +1906,30 @@ public partial class MainWindow : Window
             EmptyState.IsVisible = false;
             LoadingState.IsVisible = true;
         }
+        else if (addingFolder)
+        {
+            ScanningIndicator.IsVisible = true;
+            FadeTo(ScanningIndicator, 1, fromZero: true);
+        }
 
-        var games = await Task.Run(() => ScanFolders(folders, excluded));
+        if (addingFolder)
+        {
+            _folderScansInFlight++;
+        }
+
+        List<GameEntry> games;
+        try
+        {
+            games = await Task.Run(() => ScanFolders(folders, excluded));
+        }
+        finally
+        {
+            if (addingFolder && --_folderScansInFlight == 0)
+            {
+                ScanningIndicator.IsVisible = false;
+            }
+        }
+
         if (_isClosing || scanGeneration != Volatile.Read(ref _libraryScanGeneration))
         {
             return;

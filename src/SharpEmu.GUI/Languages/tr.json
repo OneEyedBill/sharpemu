@@ -42,6 +42,7 @@
   "Library.Empty.AddFolder": "＋ Oyun klasörü ekle",
 
   "Library.Loading": "Kütüphane yükleniyor…",
+  "Library.ScanningFolder": "Klasör taranıyor…",
   "Library.Stat.Version": "Sürüm",
   "Library.Stat.Installed": "Yüklü",
   "Library.Stat.TitleId": "Başlık kimliği",

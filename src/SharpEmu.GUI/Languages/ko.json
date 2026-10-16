@@ -40,6 +40,7 @@
   "Library.Empty.AddFolder": "＋ 게임 폴더 추가",
 
   "Library.Loading": "라이브러리 불러오는 중…",
+  "Library.ScanningFolder": "폴더 검색 중…",
   "Library.Stat.Version": "버전",
   "Library.Stat.Installed": "설치됨",
   "Library.Stat.TitleId": "타이틀 ID",

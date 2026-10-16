@@ -41,6 +41,7 @@
   "Library.Empty.AddFolder": "＋ Добавить папку с играми",
 
   "Library.Loading": "Загрузка библиотеки…",
+  "Library.ScanningFolder": "Сканирование папки…",
   "Library.Stat.Version": "Версия",
   "Library.Stat.Installed": "Установлено",
   "Library.Stat.TitleId": "ID игры",

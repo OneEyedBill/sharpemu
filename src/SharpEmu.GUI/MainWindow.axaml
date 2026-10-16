@@ -483,6 +483,32 @@ SPDX-License-Identifier: GPL-2.0-or-later
                        FontSize="13"
                        Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
           </StackPanel>
+
+          <Border x:Name="ScanningIndicator"
+                  Grid.RowSpan="2"
+                  ZIndex="10"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,0,24"
+                  Padding="18,10"
+                  CornerRadius="18"
+                  Background="#F01B1B1B"
+                  BorderBrush="{StaticResource CardBorderBrush}"
+                  BorderThickness="1"
+                  BoxShadow="0 6 24 0 #80000000"
+                  IsHitTestVisible="False"
+                  IsVisible="False">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <ProgressBar IsIndeterminate="{Binding $parent[Border].IsVisible}"
+                           Width="90"
+                           Height="3"
+                           VerticalAlignment="Center" />
+              <TextBlock Text="{Binding [Library.ScanningFolder], Source={x:Static local:Localization.Instance}}"
+                         FontSize="13"
+                         Foreground="{StaticResource SecondaryTextBrush}"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
         </Grid>
 
         <!-- Contextual per-game settings use the same layered reveal as the

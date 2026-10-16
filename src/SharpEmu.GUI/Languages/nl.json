@@ -40,6 +40,7 @@
   "Library.Empty.AddFolder": "＋ Gamemap toevoegen",
 
   "Library.Loading": "Bibliotheek laden…",
+  "Library.ScanningFolder": "Map wordt gescand…",
   "Library.Stat.Version": "Versie",
   "Library.Stat.Installed": "Geïnstalleerd",
   "Library.Stat.TitleId": "Titel-ID",

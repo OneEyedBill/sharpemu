@@ -40,6 +40,7 @@
   "Library.Empty.AddFolder": "＋ إضافة مجلد ألعاب",
 
   "Library.Loading": "جارٍ تحميل المكتبة...",
+  "Library.ScanningFolder": "جارٍ فحص المجلد…",
   "Library.Stat.Version": "الإصدار",
   "Library.Stat.Installed": "المثبت",
   "Library.Stat.TitleId": "معرّف اللعبة",

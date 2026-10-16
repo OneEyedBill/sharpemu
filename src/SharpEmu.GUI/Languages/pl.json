@@ -43,6 +43,7 @@
   "Library.Empty.AddFolder": "＋ Dodaj folder z grami",
 
   "Library.Loading": "Ładowanie biblioteki…",
+  "Library.ScanningFolder": "Skanowanie folderu…",
   "Library.Stat.Version": "Wersja",
   "Library.Stat.Installed": "Zainstalowano",
   "Library.Stat.TitleId": "Numer seryjny",
