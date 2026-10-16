@@ -1913,12 +1913,17 @@ public partial class MainWindow : Window
         }
 
         Dispatcher.UIThread.VerifyAccess();
+        var known = new HashSet<GameEntry>(_allGames);
         var reconciliation = GameLibraryReconciler.Reconcile(_allGames, games);
         _allGames.Clear();
         _allGames.AddRange(reconciliation.Games);
         RefreshVisibleGames(reconciliation.BackgroundsChanged);
         LoadingState.IsVisible = false;
-        LoadGameDetailsInBackground(reconciliation.CoversToLoad, reconciliation.Games);
+        LoadGameDetailsInBackground(
+            reconciliation.CoversToLoad,
+            showProgress
+                ? reconciliation.Games
+                : reconciliation.Games.Where(game => !known.Contains(game) || game.SizeBytes <= 0).ToArray());
         UpdateDiscordPresence();
         GameLibraryCache.Save(folders, reconciliation.Games);
     }
