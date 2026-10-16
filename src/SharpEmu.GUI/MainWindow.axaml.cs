@@ -516,6 +516,7 @@ public partial class MainWindow : Window
             CloseGameSettings(restoreLibrary: false);
         }
 
+        var previousPage = _activePageIndex;
         _activePageIndex = index;
         SetActiveClass(LibraryTabButton, index == 0);
         SetActiveClass(OptionsTabButton, index == 1);
