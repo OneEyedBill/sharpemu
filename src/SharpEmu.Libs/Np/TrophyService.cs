@@ -3,6 +3,7 @@
 
 using SharpEmu.Libs.Kernel;
 using SharpEmu.Libs.SaveData;
+using SharpEmu.Libs.SystemService;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
@@ -223,7 +224,9 @@ internal static class TrophyService
         try
         {
             var trophyPath = KernelMemoryCompatExports.ResolveGuestPath("/app0/sce_sys/trophy2/trophy00.ucp");
-            _trophies = File.Exists(trophyPath) ? ReadTrophies(File.ReadAllBytes(trophyPath)) : [];
+            _trophies = File.Exists(trophyPath)
+                ? ReadTrophies(File.ReadAllBytes(trophyPath), language: TrophyLanguage.FromSystemLanguage(SystemServiceExports.SystemLanguage))
+                : [];
             var udsPath = KernelMemoryCompatExports.ResolveGuestPath("/app0/sce_sys/uds/uds00.ucp");
             _rules = File.Exists(udsPath) ? ReadRules(File.ReadAllBytes(udsPath)) : [];
             _unlockPath = UnlockFilePath(KernelMemoryCompatExports.ApplicationTitleId);
@@ -364,22 +367,22 @@ internal static class TrophyService
             return [];
         }
 
-        var language = conf.RootElement.TryGetProperty("defaultLanguage", out var lang)
+        var defaultLanguage = conf.RootElement.TryGetProperty("defaultLanguage", out var lang)
             ? lang.GetString() ?? "en-US"
             : "en-US";
-        using var meta = ReadJson(package, files, "tropmeta_en-US.json") ?? ReadJson(package, files, $"tropmeta_{language}.json");
-        var texts = new Dictionary<int, (string Name, string Detail)>();
-        if (meta is not null &&
-            meta.RootElement.TryGetProperty("metadata", out var metadata) &&
-            metadata.TryGetProperty("trophyMetadata", out var trophyTexts))
+        var languages = package.Names
+            .Where(name => name.StartsWith("tropmeta_", StringComparison.Ordinal) && name.EndsWith(".json", StringComparison.Ordinal))
+            .Select(name => name["tropmeta_".Length..^".json".Length])
+            .ToArray();
+        var english = TrophyLanguage.Resolve(languages, "en-US") ?? defaultLanguage;
+        var texts = ReadTexts(package, english);
+        if (TrophyLanguage.Resolve(languages, language) is { } localized && localized != english)
         {
-            foreach (var text in trophyTexts.EnumerateArray())
+            foreach (var (id, text) in ReadTexts(package, localized))
             {
-                if (TryReadNumber(text, "id", out var id))
+                if (text.Name.Length != 0)
                 {
-                    texts[(int)id] = (
-                        text.TryGetProperty("name", out var n) ? n.GetString() ?? string.Empty : string.Empty,
-                        text.TryGetProperty("detail", out var d) ? d.GetString() ?? string.Empty : string.Empty);
+                    texts[id] = (text.Name, text.Detail.Length != 0 ? text.Detail : texts.GetValueOrDefault(id).Detail ?? string.Empty);
                 }
             }
         }
@@ -441,12 +444,37 @@ internal static class TrophyService
         return [.. result.Values];
     }
 
+    private static Dictionary<int, (string Name, string Detail)> ReadTexts(
+        TrophyPackage package,
+        string language)
+    {
+        var texts = new Dictionary<int, (string Name, string Detail)>();
+        using var meta = package.Json($"tropmeta_{language}.json");
+        if (meta is not null &&
+            meta.RootElement.TryGetProperty("metadata", out var metadata) &&
+            metadata.TryGetProperty("trophyMetadata", out var trophyTexts))
+        {
+            foreach (var text in trophyTexts.EnumerateArray())
+            {
+                if (TryReadNumber(text, "id", out var id))
+                {
+                    texts[(int)id] = (
+                        text.TryGetProperty("name", out var n) ? n.GetString() ?? string.Empty : string.Empty,
+                        text.TryGetProperty("detail", out var d) ? d.GetString() ?? string.Empty : string.Empty);
+                }
+            }
+        }
+
+        return texts;
+    }
+
     private static Dictionary<string, List<StatRule>> ReadRules(byte[] package)
     {
         var rules = new Dictionary<string, List<StatRule>>(StringComparer.Ordinal);
-        var files = ReadContainer(package);
-        using var definitions = ReadJson(package, files, "stats_definition.json");
-        using var extraction = ReadJson(package, files, "stats_extraction.json");
+        using var stream = new MemoryStream(package, writable: false);
+        var files = new TrophyPackage(stream);
+        using var definitions = files.Json("stats_definition.json");
+        using var extraction = files.Json("stats_extraction.json");
         if (definitions is null || extraction is null ||
             !definitions.RootElement.TryGetProperty("statDefinitionArray", out var statArray) ||
             !extraction.RootElement.TryGetProperty("statsExtractionRuleArray", out var ruleArray))

@@ -35,6 +35,7 @@ public partial class TrophyGameView : UserControl
     private HashSet<int> _earnedBefore = [];
     private string _lastSignature = string.Empty;
     private Filter _filter = Filter.All;
+    private long _stamp;
     private double _shownPercent;
     private bool _opened;
 
@@ -110,7 +111,20 @@ public partial class TrophyGameView : UserControl
     {
         var gameDirectory = _gameDirectory;
         var titleId = _titleId;
-        var trophies = await Task.Run(() => TrophyCatalog.Load(gameDirectory, titleId));
+        if (gameDirectory.Length == 0)
+        {
+            return;
+        }
+
+        var language = TrophyUi.TrophyLanguage;
+        var stamp = await Task.Run(() => HashCode.Combine(TrophyCatalog.Stamp(gameDirectory, titleId), language));
+        if (gameDirectory != _gameDirectory || (!force && stamp == _stamp))
+        {
+            return;
+        }
+
+        _stamp = stamp;
+        var trophies = await Task.Run(() => TrophyCatalog.Load(gameDirectory, titleId, language: language));
         if (gameDirectory != _gameDirectory)
         {
             return;

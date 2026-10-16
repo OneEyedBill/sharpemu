@@ -53,7 +53,8 @@ public partial class MainWindow
         if (ebootPath is not null && TrophyUi.GameDirectory(ebootPath) is { } gameDirectory)
         {
             var titleId = notice.TitleId;
-            catalog = await Task.Run(() => TrophyCatalog.Load(gameDirectory, titleId));
+            var language = TrophyLanguage.FromConsoleLanguage(_settings.ConsoleLanguage);
+            catalog = await Task.Run(() => TrophyCatalog.Load(gameDirectory, titleId, language: language));
         }
 
         var entry = catalog.FirstOrDefault(t => t.Id == notice.TrophyId);
@@ -86,7 +87,8 @@ public partial class MainWindow
             return;
         }
 
-        var catalog = await Task.Run(() => TrophyCatalog.Load(directory, game.TitleId!));
+        var language = TrophyLanguage.FromConsoleLanguage(_settings.ConsoleLanguage);
+        var catalog = await Task.Run(() => TrophyCatalog.Load(directory, game.TitleId!, language: language));
         if (generation != _trophyTestGeneration)
         {
             return;

@@ -28,10 +28,13 @@ internal static class TrophyUi
             ? SharpEmu.HLE.FileSystem.ZArchiveCache.GetCacheRoot(gamePath)
             : Path.GetDirectoryName(gamePath);
 
+    public static string TrophyLanguage =>
+        SharpEmu.Libs.Np.TrophyLanguage.FromInterfaceLanguage(Localization.Instance.CurrentCode);
+
     public static string GradeName(int grade) =>
         Localization.Instance.Get($"Trophies.Grade.{Math.Clamp(grade, 1, 4)}");
 
-    public static Bitmap? LoadIcon(byte[]? png)
+    public static Bitmap? LoadIcon(byte[]? png, int width = 192)
     {
         if (png is null || png.Length == 0)
         {
