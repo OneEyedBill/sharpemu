@@ -294,47 +294,71 @@ internal static class TrophyService
         }
     }
 
-    private static Dictionary<string, (int Offset, int Length)> ReadContainer(byte[] package)
+    private sealed class TrophyPackage
     {
-        var files = new Dictionary<string, (int Offset, int Length)>();
-        if (package.Length < 0x40 || BinaryPrimitives.ReadUInt32BigEndian(package) != 0xB228C60Au)
-        {
-            return files;
-        }
+        private readonly Stream _stream;
+        private readonly Dictionary<string, (long Offset, int Length)> _files = new(StringComparer.Ordinal);
 
-        var fileCount = BinaryPrimitives.ReadUInt32BigEndian(package.AsSpan(0x10));
-        var tableOffset = BinaryPrimitives.ReadUInt32BigEndian(package.AsSpan(0x14));
-        for (var i = 0; i < Math.Min(fileCount, 4096u); i++)
+        public TrophyPackage(Stream stream)
         {
-            var entry = (long)tableOffset + 0x20 + i * 0x40L;
-            if (entry + 0x40 > package.Length)
+            _stream = stream;
+            Span<byte> header = stackalloc byte[0x40];
+            if (stream.Length < 0x40 || stream.Read(header) != header.Length ||
+                BinaryPrimitives.ReadUInt32BigEndian(header) != 0xB228C60Au)
             {
-                break;
+                return;
             }
 
-            var nameBytes = package.AsSpan((int)entry, 0x20);
-            var nameLength = nameBytes.IndexOf((byte)0);
-            var name = Encoding.UTF8.GetString(nameBytes[..(nameLength < 0 ? nameBytes.Length : nameLength)]);
-            var offset = BinaryPrimitives.ReadUInt64BigEndian(package.AsSpan((int)entry + 0x20));
-            var length = BinaryPrimitives.ReadUInt64BigEndian(package.AsSpan((int)entry + 0x28));
-            if (offset <= (ulong)package.Length && length <= (ulong)package.Length - offset)
+            var fileCount = (int)Math.Min(BinaryPrimitives.ReadUInt32BigEndian(header[0x10..]), 4096u);
+            var tableStart = (long)BinaryPrimitives.ReadUInt32BigEndian(header[0x14..]) + 0x20;
+            var available = Math.Max(0, (stream.Length - tableStart) / 0x40);
+            fileCount = (int)Math.Min(fileCount, available);
+            var table = new byte[fileCount * 0x40];
+            stream.Position = tableStart;
+            stream.ReadExactly(table);
+            for (var i = 0; i < fileCount; i++)
             {
-                files[name] = ((int)offset, (int)length);
+                var entry = table.AsSpan(i * 0x40, 0x40);
+                var nameBytes = entry[..0x20];
+                var nameLength = nameBytes.IndexOf((byte)0);
+                var name = Encoding.UTF8.GetString(nameBytes[..(nameLength < 0 ? nameBytes.Length : nameLength)]);
+                var offset = BinaryPrimitives.ReadUInt64BigEndian(entry[0x20..]);
+                var length = BinaryPrimitives.ReadUInt64BigEndian(entry[0x28..]);
+                if (offset <= (ulong)stream.Length && length <= (ulong)stream.Length - offset && length <= int.MaxValue)
+                {
+                    _files[name] = ((long)offset, (int)length);
+                }
             }
         }
 
-        return files;
+        public IEnumerable<string> Names => _files.Keys;
+
+        public byte[]? Read(string name)
+        {
+            if (!_files.TryGetValue(name, out var file))
+            {
+                return null;
+            }
+
+            var bytes = new byte[file.Length];
+            _stream.Position = file.Offset;
+            _stream.ReadExactly(bytes);
+            return bytes;
+        }
+
+        public JsonDocument? Json(string name) => Read(name) is { } bytes ? JsonDocument.Parse(bytes) : null;
     }
 
-    private static JsonDocument? ReadJson(byte[] package, Dictionary<string, (int Offset, int Length)> files, string name) =>
-        files.TryGetValue(name, out var file)
-            ? JsonDocument.Parse(package.AsMemory(file.Offset, file.Length))
-            : null;
-
-    internal static Trophy[] ReadTrophies(byte[] package, bool includeIcons = false)
+    internal static Trophy[] ReadTrophies(byte[] package, bool includeIcons = false, string? language = null)
     {
-        var files = ReadContainer(package);
-        using var conf = ReadJson(package, files, "tropconf.json");
+        using var stream = new MemoryStream(package, writable: false);
+        return ReadTrophies(stream, includeIcons, language);
+    }
+
+    internal static Trophy[] ReadTrophies(Stream stream, bool includeIcons = false, string? language = null)
+    {
+        var package = new TrophyPackage(stream);
+        using var conf = package.Json("tropconf.json");
         if (conf is null || !conf.RootElement.TryGetProperty("trophies", out var list))
         {
             return [];
@@ -410,9 +434,7 @@ internal static class TrophyService
                 StatId = statId,
                 Target = target,
                 Comparer = (int)comparison,
-                IconPng = includeIcons && files.TryGetValue($"trop{id:D4}.png", out var icon)
-                    ? package.AsSpan(icon.Offset, icon.Length).ToArray()
-                    : null,
+                IconPng = includeIcons ? package.Read($"trop{id:D4}.png") : null,
             };
         }
 
