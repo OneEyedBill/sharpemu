@@ -266,8 +266,8 @@ public partial class TrophyHubView : UserControl
             GameList.Children.Add(new TextBlock
             {
                 Text = Localization.Instance.Get(_summaries.Count == 0 ? "Trophies.None" : "Trophies.NoMatch"),
-                Foreground = new SolidColorBrush(Color.Parse("#8E89A6")),
-                FontSize = 15,
+                Foreground = SecondaryText,
+                FontSize = 13,
             });
             return;
         }
