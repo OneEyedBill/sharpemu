@@ -131,16 +131,13 @@ internal sealed class TrophyPage : UserControl
             SlideTime + TimeSpan.FromMilliseconds(40));
     }
 
-    private static void Place(Control control, double x, float opacity)
-    {
-        if (ElementComposition.GetElementVisual(control) is { } visual)
-        {
-            visual.Translation = new Vector3D(x, 0, 0);
-            visual.Opacity = opacity;
-        }
-    }
+    private static void Place(Control control, double x, float opacity) =>
+        Move(control, x, x, opacity, opacity, TimeSpan.FromMilliseconds(1));
 
-    private static void Move(Control control, double fromX, double toX, float fromOpacity, float toOpacity)
+    private static void Move(Control control, double fromX, double toX, float fromOpacity, float toOpacity) =>
+        Move(control, fromX, toX, fromOpacity, toOpacity, SlideTime);
+
+    private static void Move(Control control, double fromX, double toX, float fromOpacity, float toOpacity, TimeSpan duration)
     {
         if (ElementComposition.GetElementVisual(control) is not { } visual)
         {
@@ -150,12 +147,12 @@ internal sealed class TrophyPage : UserControl
         var easing = new CubicEaseOut();
         var translation = visual.Compositor.CreateVector3DKeyFrameAnimation();
         translation.Target = "Translation";
-        translation.Duration = SlideTime;
+        translation.Duration = duration;
         translation.InsertKeyFrame(0f, new Vector3D(fromX, 0, 0));
         translation.InsertKeyFrame(1f, new Vector3D(toX, 0, 0), easing);
         var opacity = visual.Compositor.CreateScalarKeyFrameAnimation();
         opacity.Target = "Opacity";
-        opacity.Duration = SlideTime;
+        opacity.Duration = duration;
         opacity.InsertKeyFrame(0f, fromOpacity);
         opacity.InsertKeyFrame(1f, toOpacity, easing);
         visual.StartAnimation("Translation", translation);
