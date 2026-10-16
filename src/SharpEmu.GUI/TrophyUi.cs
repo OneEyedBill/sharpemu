@@ -61,11 +61,11 @@ internal static class TrophyUi
     {
         var chip = new Border
         {
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(16, 7),
+            CornerRadius = new CornerRadius(13),
+            Padding = new Thickness(12, 5),
             BorderThickness = new Thickness(1),
             Cursor = new Cursor(StandardCursorType.Hand),
-            Child = new TextBlock { Text = text, FontSize = 13, FontWeight = FontWeight.SemiBold },
+            Child = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeight.SemiBold },
         };
         var duration = TimeSpan.FromMilliseconds(160);
         chip.Transitions =
@@ -82,26 +82,26 @@ internal static class TrophyUi
         chip.BorderBrush = selected ? Brushes.White : ChipBorderBrush;
         if (chip.Child is TextBlock text)
         {
-            text.Foreground = selected ? new SolidColorBrush(Color.Parse("#140F26")) : Brushes.White;
+            text.Foreground = selected ? new SolidColorBrush(Color.Parse("#141414")) : Brushes.White;
         }
     }
 
     public static Border GradeChip(int grade, int earned, int total) => new()
     {
-        CornerRadius = new CornerRadius(18),
-        Padding = new Thickness(6, 5, 14, 5),
-        Margin = new Thickness(0, 0, 10, 8),
+        CornerRadius = new CornerRadius(13),
+        Padding = new Thickness(4, 3, 10, 3),
+        Margin = new Thickness(0, 0, 8, 4),
         Background = ChipBrush,
         BorderBrush = ChipBorderBrush,
         BorderThickness = new Thickness(1),
         Child = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
+            Spacing = 6,
             Children =
             {
-                new TrophyMedal { Width = 26, Height = 26, Grade = grade, Opacity = earned == 0 ? 0.6 : 1 },
-                Count(earned, total, 14),
+                new TrophyMedal { Width = 18, Height = 18, Grade = grade, Opacity = earned == 0 ? 0.6 : 1 },
+                Count(earned, total, 12),
             },
         },
     };
@@ -110,7 +110,7 @@ internal static class TrophyUi
     {
         var text = new TextBlock { FontSize = size, VerticalAlignment = VerticalAlignment.Center };
         text.Inlines!.Add(new Avalonia.Controls.Documents.Run(earned.ToString()) { FontWeight = FontWeight.Bold });
-        text.Inlines.Add(new Avalonia.Controls.Documents.Run($" / {total}") { Foreground = new SolidColorBrush(Color.Parse("#8E89A6")) });
+        text.Inlines.Add(new Avalonia.Controls.Documents.Run($" / {total}") { Foreground = new SolidColorBrush(Color.Parse("#8A8F99")) });
         return text;
     }
 

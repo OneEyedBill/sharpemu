@@ -240,79 +240,102 @@ public partial class TrophyHubView : UserControl
     {
         var cover = new Border
         {
-            Width = 104,
-            Height = 104,
-            CornerRadius = new CornerRadius(18),
+            Width = 72,
+            Height = 72,
+            CornerRadius = new CornerRadius(16),
             ClipToBounds = true,
             Background = summary.Game.PlaceholderBrush,
-            Child = summary.Game.Cover is { } bitmap
-                ? new Image { Source = bitmap, Stretch = Stretch.UniformToFill }
-                : new TextBlock
-                {
-                    Text = summary.Game.Initials,
-                    FontSize = 28,
-                    FontWeight = FontWeight.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                },
         };
-        var coverFrame = new Grid { Width = 104, Height = 104, VerticalAlignment = VerticalAlignment.Center };
+        var initials = new TextBlock
+        {
+            Text = summary.Game.Initials,
+            FontSize = 20,
+            FontWeight = FontWeight.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var coverImage = new Image { Stretch = Stretch.UniformToFill };
+        cover.Child = new Grid { Children = { initials, coverImage } };
+        void ShowCover()
+        {
+            coverImage.Source = summary.Game.Cover;
+            initials.IsVisible = summary.Game.Cover is null;
+        }
+
+        void OnGameChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(GameEntry.Cover))
+            {
+                ShowCover();
+            }
+        }
+
+        ShowCover();
+        cover.AttachedToVisualTree += (_, _) =>
+        {
+            summary.Game.PropertyChanged -= OnGameChanged;
+            summary.Game.PropertyChanged += OnGameChanged;
+            ShowCover();
+        };
+        cover.DetachedFromVisualTree += (_, _) => summary.Game.PropertyChanged -= OnGameChanged;
+        var coverFrame = new Grid { Width = 72, Height = 72, VerticalAlignment = VerticalAlignment.Center };
         coverFrame.Children.Add(new Border
         {
-            CornerRadius = new CornerRadius(18),
-            BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 10, Blur = 24, Color = Color.FromArgb(150, 0, 0, 0) }),
+            CornerRadius = new CornerRadius(16),
+            BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 3, Blur = 8, Color = Color.FromArgb(120, 0, 0, 0) }),
             Child = cover,
         });
         if (summary.Complete)
         {
             coverFrame.Children.Add(new TrophyMedal
             {
-                Width = 40,
-                Height = 40,
+                Width = 28,
+                Height = 28,
                 Grade = 1,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, -12, -12),
-                Effect = new DropShadowEffect { BlurRadius = 10, OffsetX = 0, OffsetY = 3, Color = Colors.Black, Opacity = 0.6 },
+                Margin = new Thickness(0, 0, -6, -6),
             });
         }
 
         var name = new TextBlock
         {
             Text = summary.Game.Name,
-            FontSize = 20,
+            FontSize = 17,
             FontWeight = FontWeight.SemiBold,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        var counts = new TextBlock
-        {
-            Text = Localization.Instance.Format("Trophies.Progress", summary.Earned, summary.Trophies.Count, (int)Math.Round(summary.Percent)),
-            Foreground = new SolidColorBrush(Color.Parse("#B8B4CC")),
-            FontSize = 13,
-        };
 
         var latest = summary.Latest;
-        var latestRow = new StackPanel
+        var details = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
+            Spacing = 5,
             Children =
             {
-                TrophyUi.Glyph(latest is null ? "hourglass_empty" : "workspace_premium", 15, latest is null ? Color.Parse("#8E89A6") : TrophyMedal.Palette(latest.Grade).Mid),
                 new TextBlock
                 {
-                    Text = latest is null
-                        ? Localization.Instance.Get("Trophies.NoneYet")
-                        : Localization.Instance.Format("Trophies.Latest", latest.Name, latest.UnlockedAtUtc!.Value.ToLocalTime().ToString("d")),
-                    Foreground = new SolidColorBrush(Color.Parse(latest is null ? "#8E89A6" : "#D8D4EA")),
-                    FontSize = 12.5,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Text = Localization.Instance.Format("Trophies.Progress", summary.Earned, summary.Trophies.Count, (int)Math.Round(summary.Percent)),
+                    Foreground = SecondaryText,
+                    FontSize = 13.5,
                     VerticalAlignment = VerticalAlignment.Center,
                 },
             },
         };
+        if (latest is not null)
+        {
+            details.Children.Add(TrophyUi.Glyph("workspace_premium", 14, TrophyMedal.Palette(latest.Grade).Mid));
+            details.Children.Add(new TextBlock
+            {
+                Text = Localization.Instance.Format("Trophies.Latest", latest.Name, latest.UnlockedAtUtc!.Value.ToLocalTime().ToString("d")),
+                Foreground = SecondaryText,
+                FontSize = 13.5,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
 
-        var medals = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16, Margin = new Thickness(0, 2, 0, 0) };
+        var medals = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         for (var grade = 1; grade <= 4; grade++)
         {
             var total = summary.TotalOf(grade);
@@ -325,36 +348,36 @@ public partial class TrophyHubView : UserControl
             medals.Children.Add(new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 6,
+                Spacing = 4,
                 Children =
                 {
-                    new TrophyMedal { Width = 24, Height = 24, Grade = grade, Opacity = earned == 0 ? 0.5 : 1 },
-                    TrophyUi.Count(earned, total, 13.5),
+                    new TrophyMedal { Width = 18, Height = 18, Grade = grade, Opacity = earned == 0 ? 0.5 : 1 },
+                    TrophyUi.Count(earned, total, 12.5),
                 },
             });
         }
 
         var middle = new StackPanel
         {
-            Spacing = 5,
+            Spacing = 4,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { name, counts, latestRow, medals },
+            Children = { name, details, medals },
         };
 
-        var ring = new Grid { Width = 84, Height = 84, VerticalAlignment = VerticalAlignment.Center };
-        var progressRing = new TrophyProgressRing { Thickness = 8 };
+        var ring = new Grid { Width = 44, Height = 44, VerticalAlignment = VerticalAlignment.Center };
+        var progressRing = new TrophyProgressRing { Thickness = 4 };
         TrophyUi.Animate(_animated ? summary.Percent : 0, summary.Percent, TimeSpan.FromMilliseconds(_animated ? 1 : 1100), value => progressRing.Value = value);
         ring.Children.Add(progressRing);
         ring.Children.Add(new TextBlock
         {
             Text = $"{Math.Round(summary.Percent)}%",
-            FontSize = 17,
+            FontSize = 12,
             FontWeight = FontWeight.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
         });
 
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), ColumnSpacing = 24, Margin = new Thickness(18) };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), ColumnSpacing = 20, Margin = new Thickness(14) };
         grid.Children.Add(coverFrame);
         Grid.SetColumn(middle, 1);
         grid.Children.Add(middle);
@@ -373,30 +396,10 @@ public partial class TrophyHubView : UserControl
 
         var card = new Border
         {
-            CornerRadius = new CornerRadius(24),
+            CornerRadius = new CornerRadius(18),
             BorderThickness = new Thickness(1),
             ClipToBounds = true,
-            Background = summary.Complete
-                ? new LinearGradientBrush
-                {
-                    StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                    EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                    GradientStops =
-                    {
-                        new GradientStop(Color.FromArgb(70, Gold.R, Gold.G, Gold.B), 0),
-                        new GradientStop(Color.FromArgb(14, 255, 255, 255), 0.7),
-                    },
-                }
-                : new LinearGradientBrush
-                {
-                    StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                    EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                    GradientStops =
-                    {
-                        new GradientStop(Color.FromArgb(32, 255, 255, 255), 0),
-                        new GradientStop(Color.FromArgb(12, 255, 255, 255), 1),
-                    },
-                },
+            Background = summary.Complete ? CompleteCardBrush : CardBrush,
             BorderBrush = RestingBorder(summary, selected: false),
             Cursor = new Cursor(StandardCursorType.Hand),
             Child = layers,

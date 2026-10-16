@@ -1144,7 +1144,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
         </Border>
         </Grid>
 
-        <local:TrophyPage x:Name="TrophyPageHost" IsVisible="False" Margin="32,6,32,16" />
+        <local:TrophyPage x:Name="TrophyPageHost" IsVisible="False" Margin="32,14,32,16" />
 
         <!-- Options page: stable local navigation keeps each settings group
              focused while preserving every setting from the current launcher -->
