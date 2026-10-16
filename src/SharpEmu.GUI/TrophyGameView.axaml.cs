@@ -27,7 +27,8 @@ public partial class TrophyGameView : UserControl
     private string _gameDirectory = string.Empty;
     private string _titleId = string.Empty;
     private readonly DispatcherTimer _refreshTimer = new() { Interval = TimeSpan.FromSeconds(2) };
-    private readonly Dictionary<int, Bitmap?> _icons = [];
+    private readonly Dictionary<int, (Bitmap? Sharp, Bitmap? Soft)> _icons = [];
+    private readonly Dictionary<int, (Image Image, bool Hidden)> _iconImages = [];
     private readonly HashSet<int> _revealed = [];
     private readonly List<(Border Chip, Filter Filter)> _filterChips = [];
     private IReadOnlyList<TrophyEntry> _trophies = [];
@@ -62,8 +63,8 @@ public partial class TrophyGameView : UserControl
         GameNameText.Text = game.Name;
         CoverImage.Source = game.Cover;
         CoverFrame.IsVisible = game.Cover is not null;
-        Backdrop.Source = null;
         _icons.Clear();
+        _iconImages.Clear();
         _revealed.Clear();
         _earnedBefore = [];
         _trophies = [];
@@ -138,7 +139,7 @@ public partial class TrophyGameView : UserControl
         var missing = trophies.Where(t => !_icons.ContainsKey(t.Id)).ToArray();
         if (missing.Length > 0)
         {
-            var decoded = await Task.Run(() => missing.Select(t => (t.Id, Icon: TrophyUi.LoadIcon(t.IconPng))).ToArray());
+            var decoded = await Task.Run(() => missing.Select(t => (t.Id, Icon: (TrophyUi.LoadIcon(t.IconPng), t.Hidden ? TrophyUi.LoadIcon(t.IconPng, 10) : null))).ToArray());
             if (gameDirectory != _gameDirectory)
             {
                 return;
@@ -147,9 +148,11 @@ public partial class TrophyGameView : UserControl
             foreach (var (id, icon) in decoded)
             {
                 _icons[id] = icon;
+                if (_iconImages.TryGetValue(id, out var shown))
+                {
+                    shown.Image.Source = shown.Hidden ? icon.Item2 : icon.Item1;
+                }
             }
-
-            RenderList(stagger: false);
         }
     }
 
@@ -291,11 +294,12 @@ public partial class TrophyGameView : UserControl
 
     private Grid BuildRowContent(TrophyEntry trophy, bool hidden)
     {
-        _icons.TryGetValue(trophy.Id, out var bitmap);
-        var image = new Image { Source = bitmap, Stretch = Stretch.UniformToFill };
+        _icons.TryGetValue(trophy.Id, out var icon);
+        var image = new Image { Source = hidden ? icon.Soft : icon.Sharp, Stretch = Stretch.UniformToFill };
+        RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
+        _iconImages[trophy.Id] = (image, hidden);
         if (hidden)
         {
-            image.Effect = new BlurEffect { Radius = 14 };
             image.Opacity = 0.35;
         }
         else if (!trophy.Unlocked)
@@ -304,6 +308,16 @@ public partial class TrophyGameView : UserControl
         }
 
         var iconFrame = new Grid { Width = 72, Height = 72 };
+        if (trophy.Unlocked)
+        {
+            var (_, glow, _) = TrophyMedal.Palette(trophy.Grade);
+            iconFrame.Children.Add(new Border
+            {
+                CornerRadius = new CornerRadius(16),
+                BoxShadow = new BoxShadows(new BoxShadow { Blur = 18, Color = Color.FromArgb(140, glow.R, glow.G, glow.B) }),
+            });
+        }
+
         iconFrame.Children.Add(new Border
         {
             CornerRadius = new CornerRadius(16),
@@ -311,11 +325,6 @@ public partial class TrophyGameView : UserControl
             Background = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255)),
             Child = image,
         });
-        if (trophy.Unlocked)
-        {
-            var (_, glow, _) = TrophyMedal.Palette(trophy.Grade);
-            iconFrame.Effect = new DropShadowEffect { BlurRadius = 18, OffsetX = 0, OffsetY = 0, Color = glow, Opacity = 0.55 };
-        }
         if (hidden || !trophy.Unlocked)
         {
             iconFrame.Children.Add(new Border

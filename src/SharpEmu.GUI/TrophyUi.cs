@@ -41,7 +41,7 @@ internal static class TrophyUi
         try
         {
             using var stream = new MemoryStream(png);
-            return Bitmap.DecodeToWidth(stream, 192);
+            return Bitmap.DecodeToWidth(stream, width, BitmapInterpolationMode.HighQuality);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException)
         {
