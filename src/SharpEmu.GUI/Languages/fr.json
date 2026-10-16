@@ -251,6 +251,7 @@
   "Library.Context.Trophies": "Trophées…",
   "Trophies.Title": "Trophées",
   "Trophies.None": "Ce jeu n’a pas de trophées.",
+  "Trophies.Loading": "Chargement des trophées…",
   "Trophies.Hidden": "Trophée caché",
   "Trophies.HiddenDescription": "Cliquez pour révéler ce trophée.",
   "Trophies.Locked": "Pas encore obtenu",

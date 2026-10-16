@@ -254,6 +254,7 @@
 ,
   "Trophies.Title": "トロフィー",
   "Trophies.None": "このゲームにはトロフィーがありません。",
+  "Trophies.Loading": "トロフィーを読み込み中…",
   "Trophies.Hidden": "隠しトロフィー",
   "Trophies.HiddenDescription": "クリックしてこのトロフィーを表示します。",
   "Trophies.Locked": "まだ獲得していません",

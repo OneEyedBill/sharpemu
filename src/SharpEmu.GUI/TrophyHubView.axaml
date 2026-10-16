@@ -112,8 +112,21 @@ SPDX-License-Identifier: GPL-2.0-or-later
       </Grid>
 
       <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel x:Name="GameList" Spacing="12" Margin="0,0,12,12" />
+        <StackPanel x:Name="GameList" Spacing="10" Margin="0,4,12,12" />
       </ScrollViewer>
+
+      <StackPanel x:Name="LoadingState"
+                  Grid.Row="2"
+                  Spacing="14"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsVisible="False">
+        <ProgressBar IsIndeterminate="{Binding $parent[StackPanel].IsVisible}" Width="180" Height="3" />
+        <TextBlock Text="{Binding [Trophies.Loading], Source={x:Static local:Localization.Instance}}"
+                   FontSize="13"
+                   Foreground="{StaticResource MutedBrush}"
+                   HorizontalAlignment="Center" />
+      </StackPanel>
     </Grid>
   </Grid>
 </UserControl>

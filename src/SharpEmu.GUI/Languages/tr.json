@@ -258,6 +258,7 @@
 ,
   "Trophies.Title": "Kupalar",
   "Trophies.None": "Bu oyunun kupası yok.",
+  "Trophies.Loading": "Kupalar yükleniyor…",
   "Trophies.Hidden": "Gizli kupa",
   "Trophies.HiddenDescription": "Bu kupayı göstermek için tıkla.",
   "Trophies.Locked": "Henüz kazanılmadı",

@@ -254,6 +254,7 @@
 ,
   "Trophies.Title": "Trophäen",
   "Trophies.None": "Dieses Spiel hat keine Trophäen.",
+  "Trophies.Loading": "Trophäen werden geladen…",
   "Trophies.Hidden": "Versteckte Trophäe",
   "Trophies.HiddenDescription": "Klicken, um diese Trophäe anzuzeigen.",
   "Trophies.Locked": "Noch nicht verdient",

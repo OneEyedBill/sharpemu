@@ -258,6 +258,7 @@
 ,
   "Trophies.Title": "Трофеи",
   "Trophies.None": "В этой игре нет трофеев.",
+  "Trophies.Loading": "Загрузка трофеев…",
   "Trophies.Hidden": "Скрытый трофей",
   "Trophies.HiddenDescription": "Нажмите, чтобы раскрыть этот трофей.",
   "Trophies.Locked": "Ещё не получен",

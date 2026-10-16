@@ -259,6 +259,7 @@
 ,
   "Trophies.Title": "Trofeed",
   "Trophies.None": "Sellel mängul pole trofeesid.",
+  "Trophies.Loading": "Trofeesid laaditakse…",
   "Trophies.Hidden": "Peidetud trofee",
   "Trophies.HiddenDescription": "Klõpsa selle trofee avaldamiseks.",
   "Trophies.Locked": "Pole veel saadud",

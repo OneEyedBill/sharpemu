@@ -259,6 +259,7 @@
 ,
   "Trophies.Title": "Trofei",
   "Trophies.None": "Questo gioco non ha trofei.",
+  "Trophies.Loading": "Caricamento trofei…",
   "Trophies.Hidden": "Trofeo nascosto",
   "Trophies.HiddenDescription": "Fai clic per rivelare questo trofeo.",
   "Trophies.Locked": "Non ancora ottenuto",

@@ -275,6 +275,7 @@
   "Library.Context.Trophies": "Trophies…",
   "Trophies.Title": "Trophies",
   "Trophies.None": "This game has no trophies.",
+  "Trophies.Loading": "Loading trophies…",
   "Trophies.Hidden": "Hidden trophy",
   "Trophies.HiddenDescription": "Click to reveal this trophy.",
   "Trophies.Locked": "Not earned yet",

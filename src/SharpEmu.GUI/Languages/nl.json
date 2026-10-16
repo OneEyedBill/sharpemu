@@ -254,6 +254,7 @@
 ,
   "Trophies.Title": "Trofeeën",
   "Trophies.None": "Deze game heeft geen trofeeën.",
+  "Trophies.Loading": "Trofeeën laden…",
   "Trophies.Hidden": "Verborgen trofee",
   "Trophies.HiddenDescription": "Klik om deze trofee te onthullen.",
   "Trophies.Locked": "Nog niet verdiend",

@@ -477,7 +477,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
           <StackPanel x:Name="LoadingState" Grid.RowSpan="2"
                       Spacing="14" HorizontalAlignment="Center" VerticalAlignment="Center"
                       IsVisible="False">
-            <ProgressBar IsIndeterminate="True" Width="180" Height="3" />
+            <ProgressBar IsIndeterminate="{Binding $parent[StackPanel].IsVisible}" Width="180" Height="3" />
             <TextBlock x:Name="LoadingStateText"
                        Text="{Binding [Library.Loading], Source={x:Static local:Localization.Instance}}"
                        FontSize="13"
