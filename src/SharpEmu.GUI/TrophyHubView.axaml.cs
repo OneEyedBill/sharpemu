@@ -435,45 +435,9 @@ public partial class TrophyHubView : UserControl
     private static IBrush RestingBorder(GameSummary summary, bool selected) =>
         new SolidColorBrush(selected
             ? Color.FromArgb(150, 255, 255, 255)
-            : summary.Complete ? Color.FromArgb(120, Gold.R, Gold.G, Gold.B) : Color.FromArgb(30, 255, 255, 255));
+            : summary.Complete ? Color.FromArgb(120, Gold.R, Gold.G, Gold.B) : Color.FromArgb(22, 255, 255, 255));
 
-    private async void SetBackdrop(GameEntry game)
-    {
-        var token = ++_backdropToken;
-        if (!_art.TryGetValue(game, out var art))
-        {
-            art = game.Background;
-            if (art is null && game.BackgroundPath is { } path && File.Exists(path))
-            {
-                art = await Task.Run(() =>
-                {
-                    try
-                    {
-                        using var stream = File.OpenRead(path);
-                        return Bitmap.DecodeToWidth(stream, 1280);
-                    }
-                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
-                    {
-                        return null;
-                    }
-                });
-            }
-
-            _art[game] = art;
-        }
-
-        if (token != _backdropToken || art is null)
-        {
-            return;
-        }
-
-        var next = _backdropOnA ? BackdropB : BackdropA;
-        var previous = _backdropOnA ? BackdropA : BackdropB;
-        next.Source = art;
-        next.Opacity = 0.55;
-        previous.Opacity = 0;
-        _backdropOnA = !_backdropOnA;
-    }
+    private void SetBackdrop(GameEntry game) => Backdrop?.Show(game);
 
     private void Select(int index)
     {

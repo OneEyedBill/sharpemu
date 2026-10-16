@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 using Avalonia;
-using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
-using Avalonia.Media.Transformation;
+using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
 
 namespace SharpEmu.GUI;
@@ -27,34 +26,7 @@ internal sealed class TrophyPage : UserControl
         var stage = new Grid();
         stage.Children.Add(_hub);
         stage.Children.Add(_game);
-        Content = new Border
-        {
-            CornerRadius = new CornerRadius(28),
-            ClipToBounds = true,
-            Background = new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                GradientStops =
-                {
-                    new GradientStop(Color.Parse("#16112B"), 0),
-                    new GradientStop(Color.Parse("#0C0A17"), 1),
-                },
-            },
-            BorderBrush = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)),
-            BorderThickness = new Thickness(1),
-            Child = stage,
-        };
-
-        foreach (var view in new Control[] { _hub, _game })
-        {
-            view.RenderTransform = TransformOperations.Parse("translateX(0px)");
-            view.Transitions =
-            [
-                new DoubleTransition { Property = OpacityProperty, Duration = SlideTime, Easing = new Avalonia.Animation.Easings.CubicEaseOut() },
-                new TransformOperationsTransition { Property = RenderTransformProperty, Duration = SlideTime, Easing = new Avalonia.Animation.Easings.CubicEaseOut() },
-            ];
-        }
+        Content = stage;
 
         _hub.GameChosen += (game, directory) => OpenGame(game, directory);
         _game.BackRequested += ShowCollection;
@@ -67,6 +39,30 @@ internal sealed class TrophyPage : UserControl
                 e.Handled = true;
             }
         };
+    }
+
+    private TrophyBackdrop? _backdrop;
+
+    public TrophyBackdrop? Backdrop
+    {
+        set
+        {
+            _backdrop = value;
+            _hub.Backdrop = value;
+            _game.Backdrop = value;
+        }
+    }
+
+    public void Unload()
+    {
+        ++_navigation;
+        _inGame = false;
+        _game.IsVisible = false;
+        _hub.IsVisible = true;
+        Place(_hub, 0, 1);
+        _hub.Unload();
+        _game.Unload();
+        _backdrop?.Clear();
     }
 
     public async void ShowCollection(IReadOnlyList<GameEntry> games)

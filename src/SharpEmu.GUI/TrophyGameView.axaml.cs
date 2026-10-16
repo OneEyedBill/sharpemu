@@ -39,6 +39,8 @@ public partial class TrophyGameView : UserControl
 
     public event Action? BackRequested;
 
+    internal TrophyBackdrop? Backdrop { get; set; }
+
     public TrophyGameView()
     {
         InitializeComponent();
@@ -71,35 +73,8 @@ public partial class TrophyGameView : UserControl
         _opened = false;
         BuildFilters();
         TrophyList.Children.Clear();
-        LoadBackdrop(game);
+        Backdrop?.Show(game);
         Reload(force: true);
-    }
-
-    private async void LoadBackdrop(GameEntry? game)
-    {
-        if (game?.Background is { } decoded)
-        {
-            Backdrop.Source = decoded;
-            return;
-        }
-
-        if (game?.BackgroundPath is not { } path || !File.Exists(path))
-        {
-            return;
-        }
-
-        Backdrop.Source = await Task.Run(() =>
-        {
-            try
-            {
-                using var stream = File.OpenRead(path);
-                return Bitmap.DecodeToWidth(stream, 1280);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
-            {
-                return null;
-            }
-        });
     }
 
     private void BuildFilters()

@@ -14,7 +14,9 @@ public partial class MainWindow
 
     private void InitializeTrophies()
     {
+        TrophyPageHost.Backdrop = TrophyBackdropHost;
         TrophyTestGameBox.SelectionChanged += (_, _) => LoadTrophyTestCatalog();
+        ConsoleLanguageBox.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(LoadTrophyTestCatalog);
         TrophyTestButton.Click += (_, _) => ShowTrophyTestNotification();
         TrophySound.Prepare();
         TrophySoundToggle.IsCheckedChanged += (_, _) =>

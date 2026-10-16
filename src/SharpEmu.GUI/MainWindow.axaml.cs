@@ -520,8 +520,10 @@ public partial class MainWindow : Window
         TrophyPageHost.IsVisible = index == 2;
         LibraryPage.IsVisible = index == 0;
         LibraryToolbar.IsVisible = index == 0;
-        OptionsPageSurface.IsVisible = index == 1;
+        OptionsPageSurface.IsVisible = index is 1 or 2;
+        TrophyBackdropHost.IsVisible = index == 2;
         OptionsPage.IsVisible = index == 1;
+        AnimatePageChange(previousPage, index);
         UpdateEmbeddedConsoleVisibility();
 
         if (index == 1)

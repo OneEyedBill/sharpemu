@@ -123,6 +123,10 @@ SPDX-License-Identifier: GPL-2.0-or-later
               Margin="-32,-24,-32,-20"
               Background="{StaticResource GameOptionsMenuBrush}"
               IsVisible="False" />
+      <local:TrophyBackdrop x:Name="TrophyBackdropHost"
+                            Grid.RowSpan="4"
+                            Margin="-32,-24,-32,-20"
+                            IsVisible="False" />
 
       <!-- Library / Options page switcher, with the library toolbar sharing
            the same row on the right. Plain buttons (not TabItem) so there is
