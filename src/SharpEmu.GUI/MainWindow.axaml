@@ -1663,6 +1663,8 @@ SPDX-License-Identifier: GPL-2.0-or-later
 
                   <Border Classes="optionsGroup">
                     <StackPanel Spacing="8">
+                      <Border Classes="optionsGroupDivider" />
+
                       <TextBlock Classes="optionsGroupHeader" Text="{Binding [Options.Env.Group.Debug], Source={x:Static local:Localization.Instance}}" />
                       <local:SettingRow x:Name="PerformanceProfileRow" Classes="optionRow" LabelFontFamily="Consolas,monospace" Label="SHARPEMU_PROFILE_PERFORMANCE"
                                         Description="{Binding [Options.Env.PerformanceProfile.Desc], Source={x:Static local:Localization.Instance}}">
