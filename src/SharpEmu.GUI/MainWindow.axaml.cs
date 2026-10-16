@@ -1956,8 +1956,11 @@ public partial class MainWindow : Window
 
                 try
                 {
-                    using var stream = File.OpenRead(requestedCoverPath);
-                    var bitmap = Bitmap.DecodeToWidth(stream, 312);
+                    if (GameArtCache.Load(requestedCoverPath, 312) is not { } bitmap)
+                    {
+                        continue;
+                    }
+
                     Dispatcher.UIThread.Post(() =>
                     {
                         if (generation == _detailLoadGeneration
@@ -2928,11 +2931,12 @@ public partial class MainWindow : Window
             try
             {
                 var path = game.BackgroundPath;
-                game.Background = await Task.Run(() =>
+                game.Background = await Task.Run(() => GameArtCache.Load(path, 1600));
+                if (game.Background is null)
                 {
-                    using var stream = File.OpenRead(path);
-                    return Bitmap.DecodeToWidth(stream, 1600);
-                });
+                    ShowDefaultBackdrop();
+                    return;
+                }
             }
             catch (Exception)
             {
@@ -2945,6 +2949,27 @@ public partial class MainWindow : Window
         {
             BackdropImage.Source = game.Background;
             BackdropImage.Opacity = 1.0;
+        }
+
+        RetainBackground(game);
+    }
+
+    private void RetainBackground(GameEntry game)
+    {
+        _decodedBackgrounds.Remove(game);
+        _decodedBackgrounds.Add(game);
+        for (var index = 0; _decodedBackgrounds.Count > MaxDecodedBackgrounds && index < _decodedBackgrounds.Count - 1;)
+        {
+            var oldest = _decodedBackgrounds[index];
+            if (oldest.Background is not { } bitmap || ReferenceEquals(BackdropImage.Source, bitmap))
+            {
+                index++;
+                continue;
+            }
+
+            _decodedBackgrounds.RemoveAt(index);
+            oldest.Background = null;
+            bitmap.Dispose();
         }
     }
 
