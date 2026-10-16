@@ -38,23 +38,37 @@ public partial class TrophyHubView : UserControl
     }
 
     private static readonly Color Gold = Color.Parse("#F2B93B");
+    private static readonly TimeSpan PageSettleTime = TimeSpan.FromMilliseconds(320);
+    private static readonly IBrush SecondaryText = new SolidColorBrush(Color.Parse("#A8ADB7"));
+    private static readonly IBrush CardBrush = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+    private static readonly IBrush CompleteCardBrush = new LinearGradientBrush
+    {
+        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
+        GradientStops =
+        {
+            new GradientStop(Color.FromArgb(56, Gold.R, Gold.G, Gold.B), 0),
+            new GradientStop(Color.FromArgb(14, 255, 255, 255), 0.6),
+        },
+    };
 
     private IReadOnlyList<GameEntry> _games = [];
     private readonly List<(Border Card, GameSummary Summary)> _cards = [];
     private readonly List<(Border Chip, Sort Sort)> _sortChips = [];
-    private readonly Dictionary<GameEntry, Bitmap?> _art = [];
     private readonly DispatcherTimer _idle = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private IReadOnlyList<GameSummary> _summaries = [];
     private Sort _sort = Sort.Recent;
     private int _selected = -1;
-    private int _backdropToken;
-    private bool _backdropOnA;
     private double _shownAt;
     private bool _wasShown;
     private bool _animated;
+    private string _signature = string.Empty;
+    private long _stamp;
 
     public event Action<GameEntry, string>? GameChosen;
+
+    internal TrophyBackdrop? Backdrop { get; set; }
 
     public TrophyHubView()
     {
@@ -82,7 +96,7 @@ public partial class TrophyHubView : UserControl
         {
             if (!IsEffectivelyVisible)
             {
-                _wasShown = false;
+                _idle.Stop();
                 return;
             }
 
@@ -97,7 +111,6 @@ public partial class TrophyHubView : UserControl
             var cycle = (t - 1.2) % 4.5;
             HeroMedal.Glint = t > 1.2 && cycle < 0.9 ? cycle / 0.9 : -1;
         };
-        _idle.Start();
     }
 
     public async Task ShowAsync(IReadOnlyList<GameEntry> games)
@@ -156,21 +169,63 @@ public partial class TrophyHubView : UserControl
 
     private async Task LoadAsync()
     {
-        _summaries = await Task.Run(() => _games
-            .Select(game => (Game: game, Directory: TrophyUi.GameDirectory(game.Path)))
-            .Where(entry => entry.Directory is not null)
-            .AsParallel()
-            .Select(entry => new GameSummary(
-                entry.Game,
-                entry.Directory!,
-                TrophyCatalog.Load(entry.Directory!, entry.Game.TitleId!, includeIcons: false)))
-            .Where(summary => summary.Trophies.Count > 0)
-            .ToList());
+        var games = _games;
+        var language = TrophyUi.TrophyLanguage;
+        var stamp = await Task.Run(() => HashCode.Combine(Stamp(games), language));
+        if (_animated && stamp == _stamp)
+        {
+            return;
+        }
 
+        LoadingState.IsVisible = _summaries.Count == 0;
+        await Task.Delay(PageSettleTime);
+        var summaries = await Task.Run(() =>
+        {
+            var loaded = games
+                .Select(game => (Game: game, Directory: TrophyUi.GameDirectory(game.Path)))
+                .Where(entry => entry.Directory is not null)
+                .Select(entry => new GameSummary(
+                    entry.Game,
+                    entry.Directory!,
+                    TrophyCache.Load(entry.Directory!, entry.Game.TitleId!, language)))
+                .Where(summary => summary.Trophies.Count > 0)
+                .ToList();
+            TrophyCache.Save();
+            return loaded;
+        });
+
+        _stamp = stamp;
+        LoadingState.IsVisible = false;
+        var signature = Signature(summaries);
+        if (_animated && signature == _signature)
+        {
+            return;
+        }
+
+        _signature = signature;
+        _summaries = summaries;
         RenderTotals(_summaries);
         RenderCards(stagger: !_animated);
         _animated = true;
     }
+
+    private static long Stamp(IReadOnlyList<GameEntry> games)
+    {
+        var hash = new HashCode();
+        foreach (var game in games)
+        {
+            hash.Add(game.Path);
+            if (TrophyUi.GameDirectory(game.Path) is { } directory)
+            {
+                hash.Add(TrophyCatalog.Stamp(directory, game.TitleId!));
+            }
+        }
+
+        return hash.ToHashCode();
+    }
+
+    private static string Signature(IReadOnlyList<GameSummary> summaries) =>
+        string.Join('|', summaries.Select(s => $"{s.Game.Path}:{s.Earned}/{s.Trophies.Count}:{s.Latest?.UnlockedAtUtc?.Ticks}"));
 
     private IEnumerable<GameSummary> Sorted()
     {
