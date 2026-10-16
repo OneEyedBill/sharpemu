@@ -384,10 +384,20 @@ public partial class TrophyHubView : UserControl
         Grid.SetColumn(ring, 2);
         grid.Children.Add(ring);
 
+        var spotlightBrush = new RadialGradientBrush
+        {
+            RadiusX = new RelativeScalar(0.3, RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb(30, 255, 255, 255), 0),
+                new GradientStop(Color.FromArgb(0, 255, 255, 255), 1),
+            },
+        };
         var spotlight = new Border
         {
             IsHitTestVisible = false,
             Opacity = 0,
+            Background = spotlightBrush,
             Transitions = [new Avalonia.Animation.DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(220) }],
         };
         var layers = new Grid();
@@ -418,18 +428,9 @@ public partial class TrophyHubView : UserControl
             var width = Math.Max(1, card.Bounds.Width);
             var height = Math.Max(1, card.Bounds.Height);
             var center = new RelativePoint(position.X / width, position.Y / height, RelativeUnit.Relative);
-            spotlight.Background = new RadialGradientBrush
-            {
-                Center = center,
-                GradientOrigin = center,
-                RadiusX = new RelativeScalar(0.4, RelativeUnit.Relative),
-                RadiusY = new RelativeScalar(0.4 * width / height, RelativeUnit.Relative),
-                GradientStops =
-                {
-                    new GradientStop(Color.FromArgb(46, 255, 255, 255), 0),
-                    new GradientStop(Color.FromArgb(0, 255, 255, 255), 1),
-                },
-            };
+            spotlightBrush.Center = center;
+            spotlightBrush.GradientOrigin = center;
+            spotlightBrush.RadiusY = new RelativeScalar(0.3 * width / height, RelativeUnit.Relative);
         };
         card.PointerPressed += (_, _) => Open(summary);
         return card;

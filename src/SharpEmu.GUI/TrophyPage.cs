@@ -87,11 +87,11 @@ internal sealed class TrophyPage : UserControl
             return;
         }
 
-        _hub.Opacity = 0;
+        ++_navigation;
         _game.Show(game, directory);
         _game.IsVisible = true;
-        _game.Opacity = 1;
-        _game.RenderTransform = TransformOperations.Parse("translateX(0px)");
+        Place(_game, 0, 1);
+        Place(_hub, 0, 0);
         _hub.IsVisible = false;
         _inGame = true;
         await _hub.ShowAsync(games);
@@ -118,17 +118,8 @@ internal sealed class TrophyPage : UserControl
         var token = ++_navigation;
         var distance = forward ? -48 : 48;
         arriving.IsVisible = true;
-        arriving.Opacity = 0;
-        arriving.RenderTransform = TransformOperations.Parse($"translateX({-distance}px)");
-        Dispatcher.UIThread.Post(
-            () =>
-            {
-                leaving.Opacity = 0;
-                leaving.RenderTransform = TransformOperations.Parse($"translateX({distance}px)");
-                arriving.Opacity = 1;
-                arriving.RenderTransform = TransformOperations.Parse("translateX(0px)");
-            },
-            DispatcherPriority.Background);
+        Move(leaving, 0, distance, 1, 0);
+        Move(arriving, -distance, 0, 0, 1);
         DispatcherTimer.RunOnce(
             () =>
             {
@@ -138,6 +129,37 @@ internal sealed class TrophyPage : UserControl
                 }
             },
             SlideTime + TimeSpan.FromMilliseconds(40));
+    }
+
+    private static void Place(Control control, double x, float opacity)
+    {
+        if (ElementComposition.GetElementVisual(control) is { } visual)
+        {
+            visual.Translation = new Vector3D(x, 0, 0);
+            visual.Opacity = opacity;
+        }
+    }
+
+    private static void Move(Control control, double fromX, double toX, float fromOpacity, float toOpacity)
+    {
+        if (ElementComposition.GetElementVisual(control) is not { } visual)
+        {
+            return;
+        }
+
+        var easing = new CubicEaseOut();
+        var translation = visual.Compositor.CreateVector3DKeyFrameAnimation();
+        translation.Target = "Translation";
+        translation.Duration = SlideTime;
+        translation.InsertKeyFrame(0f, new Vector3D(fromX, 0, 0));
+        translation.InsertKeyFrame(1f, new Vector3D(toX, 0, 0), easing);
+        var opacity = visual.Compositor.CreateScalarKeyFrameAnimation();
+        opacity.Target = "Opacity";
+        opacity.Duration = SlideTime;
+        opacity.InsertKeyFrame(0f, fromOpacity);
+        opacity.InsertKeyFrame(1f, toOpacity, easing);
+        visual.StartAnimation("Translation", translation);
+        visual.StartAnimation("Opacity", opacity);
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

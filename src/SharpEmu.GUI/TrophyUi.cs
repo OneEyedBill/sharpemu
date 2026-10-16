@@ -3,12 +3,15 @@
 
 using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Media.Transformation;
+using Avalonia.Rendering.Composition;
+using Avalonia.Rendering.Composition.Animations;
 using Avalonia.Threading;
 using SharpEmu.GUI.Controls;
 
@@ -128,23 +131,33 @@ internal static class TrophyUi
 
     public static void Lift(Border card)
     {
-        var duration = TimeSpan.FromMilliseconds(170);
-        card.RenderTransform = TransformOperations.Parse("translateY(0px)");
-        card.Transitions ??= [];
-        card.Transitions.Add(new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = duration, Easing = new Avalonia.Animation.Easings.CubicEaseOut() });
-        card.Transitions.Add(new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(320) });
         IBrush? resting = null;
         card.PointerEntered += (_, _) =>
         {
             resting = card.BorderBrush;
-            card.RenderTransform = TransformOperations.Parse("translateY(-3px)");
+            Translate(card, -2, TimeSpan.FromMilliseconds(170));
             card.BorderBrush = new SolidColorBrush(Color.FromArgb(150, 255, 255, 255));
         };
         card.PointerExited += (_, _) =>
         {
-            card.RenderTransform = TransformOperations.Parse("translateY(0px)");
+            Translate(card, 0, TimeSpan.FromMilliseconds(170));
             card.BorderBrush = resting;
         };
+    }
+
+    private static void Translate(Control control, double y, TimeSpan duration)
+    {
+        if (ElementComposition.GetElementVisual(control) is not { } visual)
+        {
+            return;
+        }
+
+        var animation = visual.Compositor.CreateVector3DKeyFrameAnimation();
+        animation.Target = "Translation";
+        animation.Duration = duration;
+        animation.InsertExpressionKeyFrame(0f, "this.StartingValue");
+        animation.InsertKeyFrame(1f, new Vector3D(0, y, 0), new CubicEaseOut());
+        visual.StartAnimation("Translation", animation);
     }
 
     public static void FlipIn(Control card)
@@ -156,59 +169,73 @@ internal static class TrophyUi
 
     public static void StaggerIn(IReadOnlyList<Control> rows)
     {
+        var duration = TimeSpan.FromMilliseconds(320);
         for (var i = 0; i < rows.Count; i++)
         {
-            var row = rows[i];
-            row.Opacity = 0;
-            row.Transitions ??= [];
-            if (!row.Transitions.Any(t => t is DoubleTransition d && d.Property == Visual.OpacityProperty))
+            if (ElementComposition.GetElementVisual(rows[i]) is not { } visual)
             {
-                row.Transitions.Add(new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(320) });
+                continue;
             }
 
-            if (row.RenderTransform is ITransform && row.Transitions.Any(t => t is TransformOperationsTransition))
-            {
-                row.RenderTransform = TransformOperations.Parse("translateY(18px)");
-            }
+            var delay = TimeSpan.FromMilliseconds(35 * Math.Min(i, 9));
+            var easing = new CubicEaseOut();
+            var opacity = visual.Compositor.CreateScalarKeyFrameAnimation();
+            opacity.Target = "Opacity";
+            opacity.Duration = duration;
+            opacity.DelayTime = delay;
+            opacity.DelayBehavior = AnimationDelayBehavior.SetInitialValueBeforeDelay;
+            opacity.InsertKeyFrame(0f, 0f);
+            opacity.InsertKeyFrame(1f, 1f, easing);
+            var translation = visual.Compositor.CreateVector3DKeyFrameAnimation();
+            translation.Target = "Translation";
+            translation.Duration = duration;
+            translation.DelayTime = delay;
+            translation.DelayBehavior = AnimationDelayBehavior.SetInitialValueBeforeDelay;
+            translation.InsertKeyFrame(0f, new Vector3D(0, 18, 0));
+            translation.InsertKeyFrame(1f, new Vector3D(0, 0, 0), easing);
+            visual.StartAnimation("Opacity", opacity);
+            visual.StartAnimation("Translation", translation);
         }
-
-        var next = 0;
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(35) };
-        timer.Tick += (_, _) =>
-        {
-            var batch = next < 9 ? 1 : rows.Count;
-            for (var i = 0; i < batch && next < rows.Count; i++)
-            {
-                var row = rows[next++];
-                row.Opacity = 1;
-                if (row.Transitions?.Any(t => t is TransformOperationsTransition) == true)
-                {
-                    row.RenderTransform = TransformOperations.Parse("translateY(0px)");
-                }
-            }
-
-            if (next >= rows.Count)
-            {
-                timer.Stop();
-            }
-        };
-        timer.Start();
     }
+
+    private static readonly List<(System.Diagnostics.Stopwatch Clock, double From, double To, TimeSpan Duration, Action<double> Apply)> Animations = [];
+    private static DispatcherTimer? _animationTimer;
 
     public static void Animate(double from, double to, TimeSpan duration, Action<double> apply)
     {
         apply(from);
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        timer.Tick += (_, _) =>
+        if (duration <= TimeSpan.FromMilliseconds(1) || from == to)
         {
+            apply(to);
+            return;
+        }
+
+        Animations.Add((System.Diagnostics.Stopwatch.StartNew(), from, to, duration, apply));
+        if (_animationTimer is null)
+        {
+            _animationTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
+            _animationTimer.Tick += (_, _) => StepAnimations();
+        }
+
+        _animationTimer.Start();
+    }
+
+    private static void StepAnimations()
+    {
+        for (var i = Animations.Count - 1; i >= 0; i--)
+        {
+            var (clock, from, to, duration, apply) = Animations[i];
             var t = Math.Min(1.0, clock.Elapsed.TotalMilliseconds / duration.TotalMilliseconds);
             apply(from + (to - from) * (1 - Math.Pow(1 - t, 3)));
             if (t >= 1)
             {
-                timer.Stop();
+                Animations.RemoveAt(i);
             }
-        };
-        timer.Start();
+        }
+
+        if (Animations.Count == 0)
+        {
+            _animationTimer?.Stop();
+        }
     }
 }
