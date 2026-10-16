@@ -1920,6 +1920,10 @@ public partial class MainWindow : Window
         IReadOnlyList<GameEntry> gamesToMeasure)
     {
         var generation = ++_detailLoadGeneration;
+        coversToLoad = coversToLoad
+            .Concat(_allGames.Where(game => game.Cover is null && game.CoverPath is not null))
+            .Distinct()
+            .ToArray();
         _ = Task.Run(() =>
         {
             // Covers first: they are cheap and the most visible, so the grid
