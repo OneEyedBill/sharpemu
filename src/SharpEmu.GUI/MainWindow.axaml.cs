@@ -3317,6 +3317,7 @@ public partial class MainWindow : Window
             AppendConsoleLine(
                 Localization.Instance.Format("Launch.Command", launch.EbootPath),
                 DimLineBrush);
+            DispatcherTimer.RunOnce(GuiMemory.Release, TimeSpan.FromSeconds(3));
         }
         catch (Exception exception)
         {

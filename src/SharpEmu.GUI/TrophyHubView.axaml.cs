@@ -118,7 +118,20 @@ public partial class TrophyHubView : UserControl
         _games = games;
         SearchBox.PlaceholderText = Localization.Instance.Get("Trophies.SearchWatermark");
         BuildSortChips();
+        _idle.Start();
         await LoadAsync();
+    }
+
+    public void Unload()
+    {
+        GameList.Children.Clear();
+        _cards.Clear();
+        _summaries = [];
+        _signature = string.Empty;
+        _stamp = 0;
+        _selected = -1;
+        _animated = false;
+        _idle.Stop();
     }
 
     public bool HandleKey(Key key)

@@ -99,6 +99,43 @@ public partial class TrophyGameView : UserControl
         UpdateFilterChips();
     }
 
+    public void Unload()
+    {
+        _gameDirectory = string.Empty;
+        _titleId = string.Empty;
+        _stamp = 0;
+        TrophyList.Children.Clear();
+        GradeCounts.Children.Clear();
+        CoverImage.Source = null;
+        _iconImages.Clear();
+        foreach (var (sharp, soft) in _icons.Values)
+        {
+            sharp?.Dispose();
+            soft?.Dispose();
+        }
+
+        _icons.Clear();
+        _trophies = [];
+    }
+
+    public bool HandleKey(Key key)
+    {
+        switch (key)
+        {
+            case Key.Up or Key.Down:
+                var offset = TrophyScroll.Offset.Y + (key == Key.Down ? 110 : -110);
+                TrophyScroll.Offset = new Vector(TrophyScroll.Offset.X, Math.Clamp(offset, 0, Math.Max(0, TrophyScroll.Extent.Height - TrophyScroll.Viewport.Height)));
+                return true;
+            case Key.Left or Key.Right:
+                _filter = (Filter)(((int)_filter + (key == Key.Right ? 1 : 2)) % 3);
+                UpdateFilterChips();
+                RenderList(stagger: true);
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private void UpdateFilterChips()
     {
         foreach (var (chip, filter) in _filterChips)
