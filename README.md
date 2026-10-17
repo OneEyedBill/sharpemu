@@ -10,7 +10,8 @@ SPDX-License-Identifier: GPL-2.0-or-later
 </p>
 
 <p align="center">
-  An experimental PlayStation 5 emulator for Windows, Linux and macOS.  
+  An experimental PlayStation 5 emulator for Windows, Linux and macOS.
+  *YOU GOTTA BUY THE GAME BRB*
 </p>
 
 ---
